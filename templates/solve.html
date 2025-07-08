@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calculator - Arithmancy</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        .nav-link {
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: #3b82f6;
+            transition: width 0.3s;
+        }
+        .nav-link:hover:after {
+            width: 100%;
+        }
+        .nav-link.text-blue-600:after {
+            width: 100%;
+        }
+        .function-btn {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 140px;
+            text-align: center;
+        }
+        .function-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .param-card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+        }
+        .loader {
+            border-top-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 100%);
+            z-index: 5;
+        }
+        .function-active {
+            transform: scale(1.05);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="relative min-h-screen">
+    <!-- Video Background -->
+    <video autoplay muted loop playsinline class="absolute top-0 left-0 w-full h-full object-cover z-0">
+        <source src="/static/video1.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <!-- Overlay for contrast -->
+    <div class="video-overlay z-10"></div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b relative z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <img src="/static/image 3.png" alt="Logo" class="h-8 w-auto">
+                    <span class="ml-3 text-xl font-semibold text-gray-900 ">Arithmancy</span>
+                </div>
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="nav-link text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    <a href="/overview" class="nav-link text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                    <a href="/about" class="nav-link text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">About Us</a>
+                    <a href="/solve" class="nav-link text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Solve Now</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Calculator Content -->
+    <div class="relative z-20 pt-8 pb-20">
+        <div class="max-w-7xl mx-auto px-4 ">
+            <h1 class="text-3xl font-bold text-white mb-8 text-center">Mathematical Calculator</h1>
+            
+            <!-- Function Selection -->
+            <div class="flex justify-center mb-10">
+                <div id="function-buttons" class="flex flex-wrap justify-center gap-4">
+                    <button onclick="selectFunction('fibonacci')" class="function-btn bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">Fibonacci</button>
+                    <button onclick="selectFunction('factorial')" class="function-btn bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">Factorial</button>
+                    <button onclick="selectFunction('quadratic')" class="function-btn bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">Quadratic</button>
+                    <button onclick="selectFunction('prime')" class="function-btn bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">Prime</button>
+                </div>
+            </div>
+
+            <!-- Calculator Interface -->
+            <div id="calculator-interface" class="hidden fade-in">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="modeTitle" class="text-2xl font-bold text-white"></h2>
+                        <button onclick="resetFunctionButtons()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                            ← Back to Functions
+                        </button>
+                    </div>
+                    
+                    <div class="grid lg:grid-cols-2 gap-8">
+                        <!-- Left: Inputs and Solution -->
+                        <div class="space-y-6">
+                            <div class="param-card p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Parameters</h3>
+                                <div id="inputArea" class="space-y-4 mb-6">
+                                    <!-- Input fields will be dynamically generated here -->
+                                </div>
+                                <div class="flex items-center">
+                                    <button onclick="calculate()" id="calculate-btn" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md">Solve</button>
+                                    <div id="loader" class="ml-4" style="display: none;">
+                                        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="result-card p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-3">Solution</h3>
+                                <div id="output" class="text-gray-700"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right: Chart/Visualization -->
+                        <div class="param-card p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Visualization</h3>
+                            <div id="visualization-area">
+                                <div id="chart-container" class="h-80">
+                                    <canvas id="chart"></canvas>
+                                </div>
+                                <div id="fibonacci-spiral" class="hidden">
+                                    <!-- Fibonacci spiral will be rendered here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentFunction = '';
+        let chart = null;
+
+        // Function selection
+        function selectFunction(funcName) {
+            currentFunction = funcName;
+            
+            // Show calculator interface
+            document.getElementById('calculator-interface').classList.remove('hidden');
+            document.getElementById('calculator-interface').classList.add('fade-in');
+            
+            // Set mode title
+            const modeTitle = document.getElementById('modeTitle');
+            modeTitle.textContent = funcName.charAt(0).toUpperCase() + funcName.slice(1) + ' Calculator';
+            
+            // Highlight selected button
+            document.querySelectorAll('.function-btn').forEach(btn => {
+                btn.classList.remove('function-active', 'bg-blue-700');
+                btn.classList.add('bg-blue-600');
+            });
+            const activeBtn = Array.from(document.querySelectorAll('.function-btn')).find(btn => 
+                btn.getAttribute('onclick').includes(`'${funcName}'`)
+            );
+            if (activeBtn) {
+                activeBtn.classList.add('function-active', 'bg-blue-700');
+            }
+            
+            // Clear previous inputs and output
+            document.getElementById('inputArea').innerHTML = '';
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('chart-container').classList.add('hidden');
+            document.getElementById('fibonacci-spiral').classList.add('hidden');
+            
+            // Create input fields based on function
+            let inputHTML = '';
+            switch(funcName) {
+                case 'fibonacci':
+                case 'factorial':
+                case 'prime':
+                    inputHTML = `
+                        <div class="flex items-center">
+                            <label class="block text-gray-700 font-medium mr-3 w-24">Value:</label>
+                            <input type="number" id="n-value" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" placeholder="Enter a positive integer">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'quadratic':
+                    inputHTML = `
+                        <div class="flex items-center">
+                            <label class="block text-gray-700 font-medium mr-3 w-24">a:</label>
+                            <input type="number" step="0.1" id="a-value" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Coefficient of x² (non-zero)">
+                        </div>
+                        <div class="flex items-center">
+                            <label class="block text-gray-700 font-medium mr-3 w-24">b:</label>
+                            <input type="number" step="0.1" id="b-value" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Coefficient of x">
+                        </div>
+                        <div class="flex items-center">
+                            <label class="block text-gray-700 font-medium mr-3 w-24">c:</label>
+                            <input type="number" step="0.1" id="c-value" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Constant term">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            document.getElementById('inputArea').innerHTML = inputHTML;
+            // Visualization container is always visible, so no show/hide logic here
+        }
+
+        function resetFunctionButtons() {
+            // Hide calculator interface
+            document.getElementById('calculator-interface').classList.add('hidden');
+            
+            // Reset function buttons
+            document.querySelectorAll('.function-btn').forEach(btn => {
+                btn.classList.remove('function-active', 'bg-blue-700');
+                btn.classList.add('bg-blue-600');
+            });
+            
+            // Do not hide visualization area; it should always be visible
+            currentFunction = '';
+        }
+
+        // Calculation function
+        async function calculate() {
+            if (!currentFunction) return;
+            
+            const loader = document.getElementById('loader');
+            const outputDiv = document.getElementById('output');
+            const calculateBtn = document.getElementById('calculate-btn');
+            
+            // Show loader, disable button
+            loader.style.display = 'block';
+            calculateBtn.disabled = true;
+            outputDiv.innerHTML = '';
+            
+            try {
+                let url = `/calculate?mode=${currentFunction}`;
+                let errorMsg = '';
+                
+                switch(currentFunction) {
+                    case 'fibonacci':
+                    case 'factorial':
+                    case 'prime':
+                        const n = document.getElementById('n-value').value;
+                        if (!n || isNaN(n) || n < 0) {
+                            errorMsg = 'Please enter a valid positive number for n';
+                        } else {
+                            url += `&n=${n}`;
+                        }
+                        break;
+                        
+                    case 'quadratic':
+                        const a = document.getElementById('a-value').value;
+                        const b = document.getElementById('b-value').value;
+                        const c = document.getElementById('c-value').value;
+                        
+                        if (!a || isNaN(a) || parseFloat(a) === 0) {
+                            errorMsg = 'Please enter a valid non-zero number for a';
+                        } else if (!b || isNaN(b)) {
+                            errorMsg = 'Please enter a valid number for b';
+                        } else if (!c || isNaN(c)) {
+                            errorMsg = 'Please enter a valid number for c';
+                        } else {
+                            url += `&a=${a}&b=${b}&c=${c}`;
+                        }
+                        break;
+                }
+                
+                if (errorMsg) {
+                    throw new Error(errorMsg);
+                }
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                outputDiv.innerHTML = `
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">${error.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                loader.style.display = 'none';
+                calculateBtn.disabled = false;
+            }
+        }
+
+        // Display result
+        function displayResult(data) {
+            const outputDiv = document.getElementById('output');
+            const chartContainer = document.getElementById('chart-container');
+            const fibonacciSpiral = document.getElementById('fibonacci-spiral');
+            
+            // Reset visualization areas
+            chartContainer.classList.add('hidden');
+            fibonacciSpiral.classList.add('hidden');
+            
+            if (currentFunction === 'quadratic') {
+                outputDiv.innerHTML = `
+                    <div class="space-y-4">
+                        <div><h4 class="font-semibold text-gray-800 mb-1">Solution:</h4><p class="text-gray-700">${data.roots}</p></div>
+                        <div><h4 class="font-semibold text-gray-800 mb-1">Explanation:</h4><p class="text-gray-700">${data.explanation}</p></div>
+                    </div>
+                `;
+                chartContainer.classList.remove('hidden');
+                drawGraph(data.x, data.y, data.a, data.b, data.c); // Pass a, b, c
+            } else if (currentFunction === 'fibonacci') {
+                // Fibonacci results with spiral visualization
+                outputDiv.innerHTML = `
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Explanation:</h4>
+                        <p class="text-gray-700">${data.explanation}</p>
+                    </div>
+                `;
+                
+                // Show Fibonacci spiral visualization
+                fibonacciSpiral.classList.remove('hidden');
+                fibonacciSpiral.innerHTML = `<canvas id="fibonacciCanvas" width="500" height="500" class="mx-auto block"></canvas>`;
+                const canvas = document.getElementById("fibonacciCanvas");
+                canvas.addEventListener("wheel", (e) => {
+                 e.preventDefault();
+                  const zoomIntensity = 0.1;
+                 if (e.deltaY < 0) {
+                     zoomLevel *= 1 + zoomIntensity;
+                } else {
+                      zoomLevel /= 1 + zoomIntensity;
+                                  }
+                  drawFibonacciSpiral(n);
+                });
+
+                const n = parseInt(document.getElementById('n-value').value) || 10;
+                drawFibonacciSpiral(n);
+            } else {
+                // For Prime and Factorial, leave visualization area empty (hide chart and spiral)
+                outputDiv.innerHTML = `
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Explanation:</h4>
+                        <p class="text-gray-700">${data.explanation}</p>
+                    </div>
+                `;
+                // chartContainer and fibonacciSpiral remain hidden, so area is empty
+            }
+        }
+
+        // Draw graph function
+        function drawGraph(xVals, yVals, a, b, c) {
+    const ctx = document.getElementById('chart').getContext('2d');
+
+    // Ensure a, b, c are numbers
+    a = Number(a);
+    b = Number(b);
+    c = Number(c);
+
+    // Use provided a, b, c for vertex
+    let vertexX = null, vertexY = null;
+    if (!isNaN(a) && !isNaN(b) && !isNaN(c) && a !== 0) {
+        vertexX = -b / (2 * a);
+        vertexY = a * vertexX * vertexX + b * vertexX + c;
+    }
+
+    // Compute roots (based on your backend result, update if needed)
+    const roots = [];
+    for (let i = 0; i < yVals.length - 1; i++) {
+        if (yVals[i] * yVals[i + 1] <= 0) {
+            const xRoot = xVals[i] - (yVals[i] * (xVals[i + 1] - xVals[i])) / (yVals[i + 1] - yVals[i]);
+            roots.push({ x: xRoot, y: 0 });
+        }
+    }
+
+    // Destroy existing chart
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'y = ax² + bx + c',
+                    data: xVals.map((x, i) => ({ x: x, y: yVals[i] })),
+                    borderColor: '#3b82f6',
+                    borderWidth: 3,
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0.2,
+                },
+                vertexX !== null && vertexY !== null ? {
+                    label: 'Vertex',
+                    data: [{ x: vertexX, y: vertexY }],
+                    pointRadius: 8,
+                    backgroundColor: '#dc2626',
+                    type: 'scatter',
+                    showLine: false
+                } : null,
+                {
+                    label: 'Roots',
+                    data: roots,
+                    pointRadius: 5,
+                    backgroundColor: '#059669'
+                }
+            ].filter(Boolean)
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'black'
+                    }
+                },
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'xy'
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'xy'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    grid: {
+                        color: val => val.tick.value === 0 ? 'black' : 'rgba(0,0,0,0.05)',
+                        lineWidth: val => val.tick.value === 0 ? 2 : 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'x-axis',
+                        color: 'black',
+                        font: { weight: 'bold' }
+                    },
+                    ticks: { color: 'black' }
+                },
+                y: {
+                    type: 'linear',
+                    grid: {
+                        color: val => val.tick.value === 0 ? 'black' : 'rgba(0,0,0,0.05)',
+                        lineWidth: val => val.tick.value === 0 ? 2 : 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'y-axis',
+                        color: 'black',
+                        font: { weight: 'bold' }
+                    },
+                    ticks: { color: 'black' }
+                }
+            }
+        }
+    });
+}
+
+  
+// Add this new function to your script.js
+let zoomLevel = 1.0;
+let zoomCenter = { x: 0, y: 0 };
+
+function drawFibonacciSpiral(n) {
+    const canvas = document.getElementById("fibonacciCanvas");
+    if (!canvas) {
+        console.error("Canvas with ID 'fibonacciCanvas' not found");
+        return;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+        console.error("Canvas context not found");
+        return;
+    }
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Translate to center
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(zoomLevel, zoomLevel);
+
+    // Colors
+    const colors = ["#2563eb", "#1e40af", "#3b82f6", "#60a5fa", "#93c5fd"];
+
+    // Initialize variables
+    let a = 0, b = 1, angle = 0, scale = 6;
+
+    for (let i = 0; i < n; i++) {
+        let temp = a;
+        a = b;
+        b = temp + b;
+        let radius = a * scale;
+
+        ctx.beginPath();
+        ctx.strokeStyle = colors[i % colors.length];
+        ctx.lineWidth = 5 / zoomLevel; // Keep spiral line visually consistent regardless of zoom
+        ctx.arc(0, 0, radius, angle, angle + Math.PI / 2);
+        ctx.stroke();
+
+        // Calculate spiral position for the number (in spiral coordinates)
+        let textRadius = radius + 18;
+        let textAngle = angle + Math.PI / 4;
+        let spiralX = textRadius * Math.cos(textAngle);
+        let spiralY = textRadius * Math.sin(textAngle);
+
+        // Move to the new origin for next arc
+        switch (i % 4) {
+            case 0: ctx.translate(radius, 0); break;
+            case 1: ctx.translate(0, radius); break;
+            case 2: ctx.translate(-radius, 0); break;
+            case 3: ctx.translate(0, -radius); break;
+        }
+
+        // Draw Fibonacci number at the correct screen position, not affected by zoom
+        ctx.restore(); // Remove spiral transform
+        ctx.save();
+        ctx.font = `14px Segoe UI`;
+        ctx.fillStyle = "#1f2937";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        // Convert spiral coordinates to screen coordinates
+        let screenX = centerX + spiralX * zoomLevel;
+        let screenY = centerY + spiralY * zoomLevel;
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        ctx.fillText(temp, screenX, screenY);
+        ctx.restore();
+        ctx.save(); // Re-apply spiral transform for next arc
+        ctx.translate(centerX, centerY);
+        ctx.scale(zoomLevel, zoomLevel);
+        for (let j = 0; j <= i; j++) {
+            let aa = 0, bb = 1, ang = 0, sc = 6;
+            for (let k = 0; k < j; k++) {
+                let t = aa;
+                aa = bb;
+                bb = t + bb;
+                let r = aa * sc;
+                switch (k % 4) {
+                    case 0: ctx.translate(r, 0); break;
+                    case 1: ctx.translate(0, r); break;
+                    case 2: ctx.translate(-r, 0); break;
+                    case 3: ctx.translate(0, -r); break;
+                }
+                ang += Math.PI / 2;
+            }
+        }
+        angle += Math.PI / 2;
+    }
+    ctx.restore();
+}
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+/* Clean Minimalist Design */
+body {
+    background: #f8fafc;
+    font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
+    color: #1f2937;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Navigation Styles */
+nav {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-link {
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #2563eb;
+}
+
+/* Page Management */
+.page {
+    display: block;
+}
+
+.page.hidden {
+    display: none;
+}
+
+/* Function Buttons */
+.function-btn {
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.function-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.function-btn.selected {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* Form Elements */
+input[type="text"], input[type="number"] {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background: #ffffff;
+    color: #1f2937;
+    transition: all 0.2s ease;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+button {
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+/* Output Styling */
+#output {
+    font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Chart Container */
+#chart-container {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#chart-container.hidden {
+    display: none;
+}
+
+/* Fibonacci Spiral */
+#fibonacci-spiral {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+#fibonacci-spiral.hidden {
+    display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .function-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    #function-buttons {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+/* Animation for page transitions */
+.page {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Clean up old styles */
+.input-panel, .output-container {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Remove old gradient styles */
+.mode-buttons {
+    display: none;
+}
